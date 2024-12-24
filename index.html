@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Star Wars Characters</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"
+    />
+
+    <link
+      href="data:image/x-icon;base64,AAABAAEAEBAAAAAAAABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAABfX18AAAAAADQ0NABoaGgAPT09AElISQASEhIARkZGABsbGwBPT08Ag4ODAFhYWAAtLS0ATUxOAGFhYQA2NjYAPz8/ABQUFABISEgAHR0dACYmJgBaWloAjo6OADg4OABBQUEAHx8fAFNTUwAoKCgAXFxcADExMQBDQ0MAGBgYAExMTAAqKioAXl5eADMzMwA8PDwAERERAEVFRQBOTk4AIyMjAGBgYAA1NTUASklKABwcHABQUFAAJSUlAGtrawAVFRUAdHR0AElJSQAeHh4AJycnAGRkZABCQkIAFxcXAFdWVwApKSkAb29vAKOjowBEREQAGRkZACIiIgArKysAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBASoQFzMBAQEBAQEBAQEBATARHz09CAEBAQEBAT0lJRkhGwIEJA8GJSUfAQElJSUsHxssKDk3HyUlJQEBMyUlEz0dGS4/MzklJQEBAQElJTcMLiQkHTkRJSUBAQEBJSUZLBkPORkTCCURAQEBAQElJRMQOA02CAYlAQEBAQEBHz4mIgUrDhAzFAEBAQEBARgyCwcnIBAaCQABAQEBAQEBIzQMHRceKhUBAQEBAQEBARIyPDIQAiQVAQEBAQEBAQE6NRwDLSw+KQEBAQEBAQEBATsKFjE2LwEBAQEBAQEBAQEBAQEBAQEBAQEBAf//AAD8PwAA+B8AAIABAACAAQAAgAMAAMADAADAAwAA4AcAAOAHAADgBwAA8A8AAPAPAADwDwAA+B8AAP//AAA="
+      rel="icon"
+      type="image/x-icon"
+    />
+
+    <script
+      src="https://kit.fontawesome.com/32c19bc39e.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <main class="main container py-5 px-3">
+      <h1 class="title has-text-centered">Star Wars Characters Table</h1>
+
+      <div class="field">
+        <p class="control has-icons-left has-icons-right">
+          <input class="input" type="text" id="search" placeholder="Search" />
+
+          <span class="icon is-small is-left">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </span>
+
+          <span class="icon is-small is-right">
+            <button id="clear-search" class="delete is-hidden"></button>
+          </span>
+        </p>
+      </div>
+
+      <table class="table is-striped is-fullwidth">
+        <thead class="thead">
+          <tr>
+            <th>Character Name</th>
+            <th>Gender</th>
+            <th>Birth Year</th>
+            <th>Home World</th>
+          </tr>
+        </thead>
+        <tbody class="tbody c-tbody table-group-divider"></tbody>
+      </table>
+
+      <div class="modal">
+        <div class="modal-background"></div>
+
+        <div class="modal-card">
+          <header class="modal-card-head">
+            <h2 class="modal-card-title hw-name"></h2>
+            <button id="close-modal" class="delete" aria-label="close"></button>
+          </header>
+
+          <section class="modal-card-body">
+            <table class="table is-fullwidth">
+              <tbody>
+                <tr>
+                  <th scope="row">Climate</th>
+                  <td class="hw-climate"></td>
+                </tr>
+
+                <tr>
+                  <th scope="row">Terrain</th>
+                  <td class="hw-terrain"></td>
+                </tr>
+
+                <tr>
+                  <th scope="row">Population</th>
+                  <td class="hw-population"></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const BASE_API_URL = "https://swapi.info/api/";
+      const tBody = document.querySelector(".c-tbody");
+      const search = document.getElementById("search");
+      const clearSearch = document.getElementById("clear-search");
+
+      loadCharactersData();
+
+      search.addEventListener("input", (event) => {
+        if (event.target.value) {
+          clearSearch.classList.remove("is-hidden");
+        } else {
+          clearSearch.classList.add("is-hidden");
+        }
+
+        const filterText = event.target.value.toLowerCase().trim();
+
+        filterTable(filterText);
+      });
+
+      clearSearch.addEventListener("click", () => {
+        search.value = "";
+        filterTable("");
+        clearSearch.classList.add("is-hidden");
+      });
+
+      function filterTable(searchQuery) {
+        const rows = document.querySelectorAll("tbody tr");
+
+        rows.forEach((row) => {
+          const nameCell = row.querySelector(".c-name");
+          if (nameCell) {
+            const nameText = nameCell.innerText.toLowerCase();
+
+            if (nameText.includes(searchQuery)) {
+              row.style.display = "";
+            } else {
+              row.style.display = "none";
+            }
+          }
+        });
+      }
+
+      function loadCharactersData() {
+        let dataFromServer = [];
+
+        fetch(BASE_API_URL + "people")
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            addDataToTable(tBody, data.slice(0, 5));
+          })
+          .catch((error) => console.error(error));
+
+        return dataFromServer;
+      }
+
+      function addDataToTable(table, data) {
+        data.map((item) => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          const genderCell = document.createElement("td");
+          const birthYearCell = document.createElement("td");
+          const homeWorldCell = document.createElement("td");
+
+          nameCell.innerText = item.name;
+          nameCell.classList.add("c-name");
+          genderCell.innerText = item.gender;
+          birthYearCell.innerText = item.birth_year;
+          homeWorldCell.appendChild(createHomeWorldButton(item.homeworld));
+
+          row.appendChild(nameCell);
+          row.appendChild(genderCell);
+          row.appendChild(birthYearCell);
+          row.appendChild(homeWorldCell);
+
+          table.appendChild(row);
+        });
+      }
+
+      function createHomeWorldButton(url) {
+        const homeWorldButton = document.createElement("button");
+        const modal = document.querySelector(".modal");
+
+        homeWorldButton.className = "button";
+        homeWorldButton.innerText = "Show info";
+        homeWorldButton.addEventListener("click", () => {
+          loadHomeWorldData(url, () => modal.classList.add("is-active"));
+        });
+
+        return homeWorldButton;
+      }
+
+      function createHomeWorldModal(data) {
+        const modal = document.querySelector(".modal");
+        const modalBackground = document.querySelector(".modal-background");
+        const name = document.querySelector(".hw-name");
+        const climate = document.querySelector(".hw-climate");
+        const terrain = document.querySelector(".hw-terrain");
+        const population = document.querySelector(".hw-population");
+        const modalClose = document.getElementById("close-modal");
+
+        [modalClose, modalBackground].forEach((item) =>
+          item.addEventListener("click", () =>
+            modal.classList.remove("is-active")
+          )
+        );
+
+        name.innerText = data.name;
+        climate.innerText = data.climate;
+        terrain.innerText = data.terrain;
+        population.innerText = splitLargeNum(data.population);
+      }
+
+      function loadHomeWorldData(url, callback) {
+        fetch(url)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            createHomeWorldModal(data);
+          })
+          .catch((error) => console.error(error))
+          .finally(callback);
+      }
+
+      function splitLargeNum(num) {
+        return Number(num).toLocaleString("en-US");
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bulma-primary-h: 53deg;
+    --bulma-primary-s: 96%;
+    --bulma-primary-l: 56%;
+    --bulma-link-h: 170deg;
+    --bulma-link-s: 51%;
+    --bulma-link-l: 50%;
+  }
+</style>
