@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="Explore the Star Wars universe with this interactive table of characters. Search, filter, and discover details about their homeworlds, including climate, terrain, and population. Perfect for fans and curious explorers alike."
+    />
+
     <title>Star Wars Characters</title>
 
     <link
@@ -21,26 +27,41 @@
       crossorigin="anonymous"
     ></script>
   </head>
-  <body>
-    <main class="main container py-5 px-3">
-      <h1 class="title has-text-centered">Star Wars Characters Table</h1>
 
-      <div class="field">
-        <p class="control has-icons-left has-icons-right">
-          <input class="input" type="text" id="search" placeholder="Search" />
+  <body class="body">
+    <main class="main container">
+      <div class="search field">
+        <div class="field-label is-normal has-text-left">
+          <label for="search-input" class="label">Search by name</label>
+        </div>
 
-          <span class="icon is-small is-left">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
+        <div class="field-body">
+          <div class="field">
+            <p class="control has-icons-left has-icons-right">
+              <input
+                class="input"
+                type="text"
+                id="search-input"
+                placeholder="Darth Vader"
+              />
 
-          <span class="icon is-small is-right">
-            <button id="clear-search" class="delete is-hidden"></button>
-          </span>
-        </p>
+              <span class="icon is-small is-left">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+
+              <span class="icon is-small is-right">
+                <button
+                  id="clear-search-input"
+                  class="delete is-hidden"
+                ></button>
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
 
-      <table class="table is-striped is-fullwidth">
-        <thead class="thead">
+      <table class="c-table table is-striped is-fullwidth is-hoverable">
+        <thead>
           <tr>
             <th>Character Name</th>
             <th>Gender</th>
@@ -48,20 +69,27 @@
             <th>Home World</th>
           </tr>
         </thead>
-        <tbody class="tbody c-tbody table-group-divider"></tbody>
+        <tbody class="c-tbody table-group-divider"></tbody>
       </table>
+
+      <div class="not-found is-hidden">
+        <p class="subtitle has-text-primary mb-0 has-text-weight-semibold">
+          No results found
+        </p>
+        <button id="clear-search-button" class="button">Clear search</button>
+      </div>
 
       <div class="modal">
         <div class="modal-background"></div>
 
         <div class="modal-card">
           <header class="modal-card-head">
-            <h2 class="modal-card-title hw-name"></h2>
+            <h2 class="hw-name modal-card-title has-text-weight-semibold"></h2>
             <button id="close-modal" class="delete" aria-label="close"></button>
           </header>
 
           <section class="modal-card-body">
-            <table class="table is-fullwidth">
+            <table class="hw-table table is-fullwidth">
               <tbody>
                 <tr>
                   <th scope="row">Climate</th>
@@ -84,53 +112,43 @@
       </div>
     </main>
 
+    <footer
+      class="footer pb-6 is-size-3 has-text-primary has-text-weight-semibold"
+    >
+      <p class="footer__content">
+        Star Wars Characters Table
+        <br />
+        Made by
+        <a
+          href="https://github.com/hma-3"
+          target="_blank"
+          class="has-text-primary"
+          >Mariia Hula</a
+        >
+      </p>
+    </footer>
+
     <script>
-      const BASE_API_URL = "https://swapi.info/api/";
       const tBody = document.querySelector(".c-tbody");
-      const search = document.getElementById("search");
-      const clearSearch = document.getElementById("clear-search");
+      const searchInput = document.getElementById("search-input");
+      const clearSearchInput = document.getElementById("clear-search-input");
+      const clearSearchButton = document.getElementById("clear-search-button");
+      const notFound = document.querySelector(".not-found");
 
       loadCharactersData();
 
-      search.addEventListener("input", (event) => {
-        if (event.target.value) {
-          clearSearch.classList.remove("is-hidden");
-        } else {
-          clearSearch.classList.add("is-hidden");
-        }
+      searchInput.addEventListener("input", debounce(changeSearch));
 
-        const filterText = event.target.value.toLowerCase().trim();
-
-        filterTable(filterText);
-      });
-
-      clearSearch.addEventListener("click", () => {
-        search.value = "";
-        filterTable("");
-        clearSearch.classList.add("is-hidden");
-      });
-
-      function filterTable(searchQuery) {
-        const rows = document.querySelectorAll("tbody tr");
-
-        rows.forEach((row) => {
-          const nameCell = row.querySelector(".c-name");
-          if (nameCell) {
-            const nameText = nameCell.innerText.toLowerCase();
-
-            if (nameText.includes(searchQuery)) {
-              row.style.display = "";
-            } else {
-              row.style.display = "none";
-            }
-          }
-        });
-      }
+      [clearSearchInput, clearSearchButton].forEach((item) =>
+        item.addEventListener("click", () => {
+          searchInput.value = "";
+          filterTable("");
+          clearSearchInput.classList.add("is-hidden");
+        })
+      );
 
       function loadCharactersData() {
-        let dataFromServer = [];
-
-        fetch(BASE_API_URL + "people")
+        fetch("https://swapi.info/api/people")
           .then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
@@ -140,9 +158,21 @@
           .then((data) => {
             addDataToTable(tBody, data.slice(0, 5));
           })
-          .catch((error) => console.error(error));
+          .catch(() => console.warn(error));
+      }
 
-        return dataFromServer;
+      function loadHomeWorldData(url) {
+        fetch(url)
+          .then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
+          .then((data) => {
+            createHomeWorldModal(data);
+          })
+          .catch((error) => console.warn(error));
       }
 
       function addDataToTable(table, data) {
@@ -175,7 +205,7 @@
         homeWorldButton.className = "button";
         homeWorldButton.innerText = "Show info";
         homeWorldButton.addEventListener("click", () => {
-          loadHomeWorldData(url, () => modal.classList.add("is-active"));
+          loadHomeWorldData(url);
         });
 
         return homeWorldButton;
@@ -200,21 +230,57 @@
         climate.innerText = data.climate;
         terrain.innerText = data.terrain;
         population.innerText = splitLargeNum(data.population);
+
+        modal.classList.add("is-active");
       }
 
-      function loadHomeWorldData(url, callback) {
-        fetch(url)
-          .then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
+      function changeSearch(event) {
+        if (event.target.value) {
+          clearSearchInput.classList.remove("is-hidden");
+        } else {
+          clearSearchInput.classList.add("is-hidden");
+        }
+
+        const filterText = event.target.value.toLowerCase().trim();
+        filterTable(filterText);
+      }
+
+      function filterTable(searchQuery) {
+        tBody.classList.remove("is-hidden");
+        notFound.classList.add("is-hidden");
+
+        const rows = document.querySelectorAll(".c-tbody tr");
+        let countVisible = 0;
+
+        rows.forEach((row) => {
+          const nameCell = row.querySelector(".c-name");
+
+          if (nameCell) {
+            const nameText = nameCell.innerText.toLowerCase();
+
+            if (nameText.includes(searchQuery)) {
+              row.classList.remove("is-hidden");
+              countVisible++;
+            } else {
+              row.classList.add("is-hidden");
             }
-            return res.json();
-          })
-          .then((data) => {
-            createHomeWorldModal(data);
-          })
-          .catch((error) => console.error(error))
-          .finally(callback);
+          }
+        });
+
+        if (!countVisible) {
+          tBody.classList.add("is-hidden");
+          notFound.classList.remove("is-hidden");
+        }
+      }
+
+      function debounce(func, timeout = 300) {
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            func.apply(this, args);
+          }, timeout);
+        };
       }
 
       function splitLargeNum(num) {
@@ -229,8 +295,50 @@
     --bulma-primary-h: 53deg;
     --bulma-primary-s: 96%;
     --bulma-primary-l: 56%;
-    --bulma-link-h: 170deg;
-    --bulma-link-s: 51%;
-    --bulma-link-l: 50%;
+    --bulma-link-h: 246deg;
+    --bulma-link-s: 31%;
+    --bulma-link-l: 48%;
+
+    --tablet: 640px;
+    --desktop: 1200px;
+
+    overflow-y: auto;
+  }
+
+  .body {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+
+  .main {
+    padding: 24px 16px;
+
+    @media (min-width: var(--tablet)) {
+      padding: 32px 24px;
+    }
+
+    @media (min-width: var(--desktop)) {
+      padding: 56px 32px;
+    }
+  }
+
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .footer {
+    perspective: 200px;
+  }
+
+  .footer__content {
+    width: 100%;
+
+    text-align: center;
+
+    transform: rotateX(30deg);
   }
 </style>
